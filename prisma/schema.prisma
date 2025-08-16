@@ -1,0 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  password      String?
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+  dreamboards DreamBoard[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model DreamBoard {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  isPublic    Boolean  @default(false)
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dreams        Dream[]
+  incomeStreams IncomeStream[]
+
+  @@index([userId])
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  color     String
+  icon      String
+  createdAt DateTime @default(now())
+
+  dreams Dream[]
+}
+
+model Dream {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?
+  categoryId    String
+  estimatedCost Decimal  @db.Decimal(10, 2)
+  deadlineYear  Int
+  deadlineMonth Int
+  priorityLevel String   // low, medium, high
+  emoji         String?
+  timelineYear  Int
+  timelineMonth Int
+  status        String   // planning, in_progress, completed, on_hold
+  dreamboardId  String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  category   Category   @relation(fields: [categoryId], references: [id])
+  dreamboard DreamBoard @relation(fields: [dreamboardId], references: [id], onDelete: Cascade)
+
+  @@index([dreamboardId])
+  @@index([categoryId])
+}
+
+model IncomeStream {
+  id              String   @id @default(cuid())
+  name            String
+  amount          Decimal  @db.Decimal(10, 2)
+  frequency       String   // weekly, monthly, yearly
+  startDate       DateTime
+  growthPercentage Decimal  @db.Decimal(5, 2) @default(0)
+  isRecurring     Boolean  @default(true)
+  category        String?
+  dreamboardId    String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  dreamboard DreamBoard @relation(fields: [dreamboardId], references: [id], onDelete: Cascade)
+
+  @@index([dreamboardId])
+}
