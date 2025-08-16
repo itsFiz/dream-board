@@ -50,7 +50,7 @@ export function Header() {
           <div className="flex items-center space-x-4">
             {status === 'loading' ? (
               <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse" />
-            ) : session ? (
+            ) : session?.user ? (
               <UserMenu user={session.user} onSignOut={() => signOut()} />
             ) : (
               <div className="flex items-center space-x-3">
